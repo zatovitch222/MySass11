@@ -1,0 +1,336 @@
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables')
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Types pour la base de données
+export interface Database {
+  public: {
+    Tables: {
+      users: {
+        Row: {
+          id: string
+          email: string
+          first_name: string
+          last_name: string
+          role: 'admin' | 'teacher' | 'student' | 'parent'
+          phone?: string
+          address?: string
+          avatar_url?: string
+          can_change_password: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          first_name: string
+          last_name: string
+          role: 'admin' | 'teacher' | 'student' | 'parent'
+          phone?: string
+          address?: string
+          avatar_url?: string
+          can_change_password?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          first_name?: string
+          last_name?: string
+          role?: 'admin' | 'teacher' | 'student' | 'parent'
+          phone?: string
+          address?: string
+          avatar_url?: string
+          can_change_password?: boolean
+          updated_at?: string
+        }
+      }
+      students: {
+        Row: {
+          id: string
+          user_id: string
+          level: string
+          teacher_id: string
+          parent_id?: string
+          notes?: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          level: string
+          teacher_id: string
+          parent_id?: string
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          level?: string
+          teacher_id?: string
+          parent_id?: string
+          notes?: string
+          updated_at?: string
+        }
+      }
+      teachers: {
+        Row: {
+          id: string
+          user_id: string
+          subjects: string[]
+          hourly_rate?: number
+          bio?: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          subjects: string[]
+          hourly_rate?: number
+          bio?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          subjects?: string[]
+          hourly_rate?: number
+          bio?: string
+          updated_at?: string
+        }
+      }
+      parents: {
+        Row: {
+          id: string
+          user_id: string
+          children_ids: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          children_ids: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          children_ids?: string[]
+          updated_at?: string
+        }
+      }
+      groups: {
+        Row: {
+          id: string
+          name: string
+          teacher_id: string
+          student_ids: string[]
+          subject: string
+          level: string
+          description?: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          teacher_id: string
+          student_ids: string[]
+          subject: string
+          level: string
+          description?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          teacher_id?: string
+          student_ids?: string[]
+          subject?: string
+          level?: string
+          description?: string
+          updated_at?: string
+        }
+      }
+      courses: {
+        Row: {
+          id: string
+          title: string
+          description?: string
+          date: string
+          duration: number
+          subject: string
+          teacher_id: string
+          group_id?: string
+          student_id?: string
+          status: 'scheduled' | 'completed' | 'cancelled'
+          notes?: string
+          homework?: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description?: string
+          date: string
+          duration: number
+          subject: string
+          teacher_id: string
+          group_id?: string
+          student_id?: string
+          status?: 'scheduled' | 'completed' | 'cancelled'
+          notes?: string
+          homework?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string
+          date?: string
+          duration?: number
+          subject?: string
+          teacher_id?: string
+          group_id?: string
+          student_id?: string
+          status?: 'scheduled' | 'completed' | 'cancelled'
+          notes?: string
+          homework?: string
+          updated_at?: string
+        }
+      }
+      course_materials: {
+        Row: {
+          id: string
+          title: string
+          description?: string
+          file_url: string
+          file_name: string
+          file_type: string
+          file_size: number
+          teacher_id: string
+          course_id?: string
+          group_id?: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description?: string
+          file_url: string
+          file_name: string
+          file_type: string
+          file_size: number
+          teacher_id: string
+          course_id?: string
+          group_id?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string
+          file_url?: string
+          file_name?: string
+          file_type?: string
+          file_size?: number
+          teacher_id?: string
+          course_id?: string
+          group_id?: string
+          updated_at?: string
+        }
+      }
+      grades: {
+        Row: {
+          id: string
+          student_id: string
+          course_id: string
+          teacher_id: string
+          subject: string
+          grade: number
+          max_grade: number
+          comment?: string
+          date: string
+          type: 'quiz' | 'exam' | 'homework' | 'participation'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          student_id: string
+          course_id: string
+          teacher_id: string
+          subject: string
+          grade: number
+          max_grade: number
+          comment?: string
+          date: string
+          type: 'quiz' | 'exam' | 'homework' | 'participation'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          student_id?: string
+          course_id?: string
+          teacher_id?: string
+          subject?: string
+          grade?: number
+          max_grade?: number
+          comment?: string
+          date?: string
+          type?: 'quiz' | 'exam' | 'homework' | 'participation'
+          updated_at?: string
+        }
+      }
+      attendance: {
+        Row: {
+          id: string
+          student_id: string
+          course_id: string
+          status: 'present' | 'absent' | 'late' | 'excused'
+          notes?: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          student_id: string
+          course_id: string
+          status: 'present' | 'absent' | 'late' | 'excused'
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          student_id?: string
+          course_id?: string
+          status?: 'present' | 'absent' | 'late' | 'excused'
+          notes?: string
+          updated_at?: string
+        }
+      }
+    }
+  }
+}
