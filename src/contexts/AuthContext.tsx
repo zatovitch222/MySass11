@@ -4,7 +4,8 @@ import { supabase, Database } from '../lib/supabase'
 
 type UserRole = 'admin' | 'teacher' | 'student' | 'parent'
 
-interface UserProfile extends Database['public']['Tables']['users']['Row'] {}
+type UserTableRow = Database['public']['Tables']['users']['Row']
+interface UserProfile extends UserTableRow {}
 
 interface AuthContextType {
   user: User | null
