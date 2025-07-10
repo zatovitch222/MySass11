@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { User, Session } from '@supabase/supabase-js'
+import { Database } from '../types/database'
 import { supabase, Database } from '../lib/supabase'
 
 type UserRole = 'admin' | 'teacher' | 'student' | 'parent'
