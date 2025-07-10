@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { Plus, Edit, Trash2, Search, Filter, UserPlus, Mail, Phone, MapPin } from 'lucide-react'
+import { Plus, Edit, Trash2, Search, Filter, UserPlus, Mail, Phone, MapPin, Eye, EyeOff } from 'lucide-react'
 import { supabase, Database } from '../../lib/supabase'
+import { useAuth } from '../../contexts/AuthContext'
 
 type UserProfile = Database['public']['Tables']['users']['Row']
 
 const UserManagement: React.FC = () => {
+  const { createUser, deleteUser } = useAuth()
   const [users, setUsers] = useState<UserProfile[]>([])
   const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
@@ -59,33 +61,27 @@ const UserManagement: React.FC = () => {
       return
     }
 
-    try {
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userId)
-
-      if (error) throw error
-      
-      setUsers(users.filter(u => u.id !== userId))
-    } catch (error) {
-      console.error('Error deleting user:', error)
-      alert('Erreur lors de la suppression de l\'utilisateur')
+    const { error } = await deleteUser(userId)
+    
+    if (error) {
+      alert('Erreur lors de la suppression : ' + error)
+    } else {
+      fetchUsers() // Refresh the list
     }
   }
 
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-100 text-red-800 border-red-200'
       case 'teacher':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-blue-100 text-blue-800 border-blue-200'
       case 'student':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 text-green-800 border-green-200'
       case 'parent':
-        return 'bg-purple-100 text-purple-800'
+        return 'bg-purple-100 text-purple-800 border-purple-200'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
 
@@ -115,7 +111,10 @@ const UserManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Gestion des utilisateurs</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Gestion des utilisateurs</h1>
+          <p className="text-gray-600 mt-1">Créez et gérez tous les comptes utilisateurs</p>
+        </div>
         <button
           onClick={() => setShowCreateForm(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
@@ -182,6 +181,9 @@ const UserManagement: React.FC = () => {
                     Contact
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Statut
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date d'inscription
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -211,7 +213,7 @@ const UserManagement: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getRoleColor(user.role)}`}>
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${getRoleColor(user.role)}`}>
                         {getRoleLabel(user.role)}
                       </span>
                     </td>
@@ -231,6 +233,19 @@ const UserManagement: React.FC = () => {
                         )}
                       </div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-2 h-2 rounded-full ${user.is_active ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                        <span className="text-sm text-gray-600">
+                          {user.is_active ? 'Actif' : 'Inactif'}
+                        </span>
+                        {user.can_change_password && (
+                          <span className="inline-flex px-1 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-800">
+                            Peut changer MDP
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {new Date(user.created_at).toLocaleDateString('fr-FR')}
                     </td>
@@ -239,12 +254,14 @@ const UserManagement: React.FC = () => {
                         <button className="text-blue-600 hover:text-blue-900 p-1 rounded">
                           <Edit className="h-4 w-4" />
                         </button>
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="text-red-600 hover:text-red-900 p-1 rounded"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {user.role !== 'admin' && (
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="text-red-600 hover:text-red-900 p-1 rounded"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -272,6 +289,7 @@ interface CreateUserModalProps {
 }
 
 const CreateUserModal: React.FC<CreateUserModalProps> = ({ onClose, onUserCreated }) => {
+  const { createUser } = useAuth()
   const [formData, setFormData] = useState({
     email: '',
     first_name: '',
@@ -282,50 +300,44 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ onClose, onUserCreate
     password: ''
   })
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    let password = ''
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    setFormData({ ...formData, password })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    try {
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: formData.email,
-        password: formData.password,
-        email_confirm: true
-      })
+    const { error } = await createUser({
+      email: formData.email,
+      password: formData.password,
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      role: formData.role,
+      phone: formData.phone || undefined,
+      address: formData.address || undefined
+    })
 
-      if (authError) throw authError
-
-      // Create user profile
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: authData.user.id,
-          email: formData.email,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          role: formData.role,
-          phone: formData.phone || null,
-          address: formData.address || null,
-          can_change_password: formData.role === 'student'
-        })
-
-      if (profileError) throw profileError
-
+    if (error) {
+      alert('Erreur lors de la création : ' + error)
+    } else {
       onUserCreated()
       onClose()
-    } catch (error) {
-      console.error('Error creating user:', error)
-      alert('Erreur lors de la création de l\'utilisateur')
-    } finally {
-      setLoading(false)
     }
+
+    setLoading(false)
   }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full p-6">
+      <div className="bg-white rounded-lg max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold text-gray-900 mb-4">
           Créer un nouvel utilisateur
         </h2>
@@ -375,14 +387,32 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ onClose, onUserCreate
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Mot de passe
             </label>
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-              minLength={6}
-            />
+            <div className="flex space-x-2">
+              <div className="relative flex-1">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={generatePassword}
+                className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+              >
+                Générer
+              </button>
+            </div>
           </div>
 
           <div>
@@ -425,6 +455,14 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ onClose, onUserCreate
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
+
+          {formData.role === 'student' && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-sm text-yellow-800">
+                <strong>Note:</strong> Les élèves pourront modifier leur mot de passe une fois connectés.
+              </p>
+            </div>
+          )}
 
           <div className="flex justify-end space-x-3 pt-4">
             <button

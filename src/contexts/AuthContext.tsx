@@ -2,10 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User, Session } from '@supabase/supabase-js'
 import { supabase, Database } from '../lib/supabase'
 
-type UserRole = 'admin' | 'teacher' | 'student' | 'parent'
-
-type UserTableRow = Database['public']['Tables']['users']['Row']
-interface UserProfile extends UserTableRow {}
+type UserProfile = Database['public']['Tables']['users']['Row']
 
 interface AuthContextType {
   user: User | null
@@ -16,6 +13,16 @@ interface AuthContextType {
   signOut: () => Promise<void>
   updatePassword: (newPassword: string) => Promise<{ error?: string }>
   refreshProfile: () => Promise<void>
+  createUser: (userData: {
+    email: string
+    password: string
+    first_name: string
+    last_name: string
+    role: 'admin' | 'teacher' | 'student' | 'parent'
+    phone?: string
+    address?: string
+  }) => Promise<{ error?: string }>
+  deleteUser: (userId: string) => Promise<{ error?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -43,7 +50,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', userId)
+        .eq('auth_id', userId)
         .single()
 
       if (error) {
@@ -106,6 +113,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       })
 
       if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          return { error: 'Identifiants de connexion invalides' }
+        }
         return { error: error.message }
       }
 
@@ -135,6 +145,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }
 
+  const createUser = async (userData: {
+    email: string
+    password: string
+    first_name: string
+    last_name: string
+    role: 'admin' | 'teacher' | 'student' | 'parent'
+    phone?: string
+    address?: string
+  }) => {
+    try {
+      const { error } = await supabase.rpc('create_user_account', {
+        p_email: userData.email,
+        p_password: userData.password,
+        p_first_name: userData.first_name,
+        p_last_name: userData.last_name,
+        p_role: userData.role,
+        p_phone: userData.phone || null,
+        p_address: userData.address || null
+      })
+
+      if (error) {
+        return { error: error.message }
+      }
+
+      return {}
+    } catch (error) {
+      return { error: 'Une erreur est survenue lors de la création de l\'utilisateur' }
+    }
+  }
+
+  const deleteUser = async (userId: string) => {
+    try {
+      const { error } = await supabase.rpc('delete_user_account', {
+        p_user_id: userId
+      })
+
+      if (error) {
+        return { error: error.message }
+      }
+
+      return {}
+    } catch (error) {
+      return { error: 'Une erreur est survenue lors de la suppression de l\'utilisateur' }
+    }
+  }
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -144,7 +200,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       signIn,
       signOut,
       updatePassword,
-      refreshProfile
+      refreshProfile,
+      createUser,
+      deleteUser
     }}>
       {children}
     </AuthContext.Provider>

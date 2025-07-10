@@ -24,6 +24,11 @@ const LoginForm: React.FC = () => {
     setLoading(false)
   }
 
+  const fillAdminCredentials = () => {
+    setEmail('admin@edumanage.com')
+    setPassword('admin123')
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
@@ -96,30 +101,32 @@ const LoginForm: React.FC = () => {
             </button>
           </form>
 
-          <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600 mb-3 font-medium">Comptes de démonstration :</p>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between">
-                <strong className="text-gray-700">Admin:</strong> 
-                <span className="text-gray-600">admin@edumanage.com</span>
-              </div>
-              <div className="flex justify-between">
-                <strong className="text-gray-700">Professeur:</strong> 
-                <span className="text-gray-600">prof@edumanage.com</span>
-              </div>
-              <div className="flex justify-between">
-                <strong className="text-gray-700">Élève:</strong> 
-                <span className="text-gray-600">eleve@edumanage.com</span>
-              </div>
-              <div className="flex justify-between">
-                <strong className="text-gray-700">Parent:</strong> 
-                <span className="text-gray-600">parent@edumanage.com</span>
-              </div>
-              <div className="mt-2 pt-2 border-t border-gray-200">
-                <span className="text-gray-500">Mot de passe pour tous : </span>
-                <strong className="text-gray-700">password123</strong>
-              </div>
+          <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+            <div className="text-center mb-3">
+              <p className="text-sm font-medium text-blue-900">Accès Administrateur</p>
+              <p className="text-xs text-blue-700 mt-1">
+                Seul l'administrateur peut se connecter initialement
+              </p>
             </div>
+            
+            <button
+              type="button"
+              onClick={fillAdminCredentials}
+              className="w-full bg-white text-blue-700 py-2 px-4 rounded-lg border border-blue-300 hover:bg-blue-50 transition-colors text-sm font-medium"
+            >
+              Utiliser les identifiants admin
+            </button>
+            
+            <div className="mt-3 text-xs text-blue-600 text-center">
+              <div><strong>Email:</strong> admin@edumanage.com</div>
+              <div><strong>Mot de passe:</strong> admin123</div>
+            </div>
+          </div>
+
+          <div className="mt-6 text-center">
+            <p className="text-xs text-gray-500">
+              Une fois connecté, l'administrateur peut créer des comptes pour les professeurs, élèves et parents.
+            </p>
           </div>
         </div>
       </div>
